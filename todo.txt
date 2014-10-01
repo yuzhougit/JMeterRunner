@@ -1,0 +1,5 @@
+#install jmeter
+#install node and npm
+#install httpServer
+#install github
+#download sourcefiles from github

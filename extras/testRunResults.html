@@ -1,0 +1,51 @@
+<html><head><title>Running Test</title>
+
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.1/themes/smoothness/jquery-ui.css">
+	<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+	<script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+	<script src="https://www.google.com/jsapi"></script>
+	<script src="https://jquery-csv.googlecode.com/files/jquery.csv-0.71.js"></script>
+	<script src="../resources/misc.js"></script>
+	<script type='text/javascript'>
+	//add tabs
+	$(function() {$( "#tabs" ).tabs();});
+	// load the visualization library from Google and set a listener
+</script>
+</head>
+<body>
+<div id="testSummary">
+<p>Awaiting data...
+</p>
+</div>
+
+<div id="tabs">
+  <ul>
+	<li><a href="#summaryStats">summary</a></li>
+    <li><a href="#runnerStatus">run status</a></li>
+	<li><a href="#jmeterLog">jmeter log</a></li>
+    <li><a href="#charts">charts</a></li>
+    <li><a href="#debug">debug</a></li>
+  </ul>
+  <div id="summaryStats"><table id="summaryTable"></table></div>
+  <div id="runnerStatus"><p>awaiting data</p></div>
+  <div id="jmeterLog"><p>awaiting data</p></div>
+  <div id="charts"><div id="chooseGraph">
+		<select id="graphOption" onchange="makeGraph()">
+			<option value="../results/ResponseTimesOverTime.csv" selected>Response Times Over Time</option>
+			<option value="../results/LatenciesOverTime.csv">Latencies Over Time</option>
+			<option value="../results/ResponseCodesPerSecond.csv">Response Codes Per Second</option>
+			<option value="../results/ResponseTimesDistribution.csv">Response Times Distribution</option>
+			<option value="../results/ThroughputVsThreads.csv">Throughput Vs Threads</option>
+			<option value="../results/TimesVsThreads.csv">Times Vs Threads</option>
+			<option value="../results/TransactionsPerSecond.csv">Transactions PerSecond</option>
+			<option value="../results/BytesThroughputOverTime.csv">Bytes Throughput Over Time</option>
+		</select>
+	</div> 
+	<div id="csv2chart" style="width: 900px; height: 500px;"></div>   
+	<div id="csv2table" style="width: 900px; height: 500px;"></div>
+  </div>
+  <div id="debug">
+    <p><a href="./results_tree.xml" target="_blank">request/response tree</a></p>
+  </div>
+</div>
+</body></html>
