@@ -5,8 +5,8 @@ var fs = require('fs');
 var sys = require('sys');
 var finalhandler = require('finalhandler');
 var serveStatic = require('serve-static');
-//var jmeterBinPath = "/home/ec2-user/apache-jmeter-2.11/bin/";
-var jmeterBinPath = "";
+var jmeterBinPath = "/home/ec2-user/apache-jmeter-2.11/bin/";
+//var jmeterBinPath = "";
 //var jmeterPath = '/home/ec2-user/jmeter/';
 var jmeterPath = './';
 var jmeterTestsPath = jmeterPath + 'tests/';
@@ -22,23 +22,36 @@ var ts = "";
 var timeoutId = "";
 var reportTimeoutId = "";
 
-function updateResults(){
+//function updateResults(){
+//	function puts(error, stdout, stderr) { sys.puts(stdout); }
+//	var jmeterRunnerStatus = fs.readFileSync(resultsFolder + "/jmeterRunnerStatus.log", 'utf8');
+//		var execStatement = "";
+//	if(jmeterRunnerStatus.indexOf("end of run") > 0){
+//		clearInterval(timeoutId);
+//		//execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl";
+//		var execStatement = jmeterPath + "resultsProcessor.sh " + testRunFolder + " output_results.jtl";
+//	}
+	//else{
+	//	execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl; echo '</testResults>' >> " + resultsFolder + "/interim_results.jtl";
+	//}
+//	exec(execStatement, puts);
+//}
+
+function processResults(){
 	function puts(error, stdout, stderr) { sys.puts(stdout); }
 	var jmeterRunnerStatus = fs.readFileSync(resultsFolder + "/jmeterRunnerStatus.log", 'utf8');
 		var execStatement = "";
 	if(jmeterRunnerStatus.indexOf("end of run") > 0){
 		clearInterval(timeoutId);
-		execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl";
+		//execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl";
+		var execStatement = jmeterPath + "resultsProcessor.sh " + testRunFolder + " output_results.jtl";
 	}
-	else{
-		execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl; echo '</testResults>' >> " + resultsFolder + "/interim_results.jtl";
-	}
-	exec(execStatement, puts);
 }
 
-function processResults(){
+function awkResults(){
 		function puts(error, stdout, stderr) { sys.puts(stdout); }
-		var execStatement = jmeterPath + "resultsProcessor.sh " + testRunFolder + " interim_results.jtl";
+		var execStatement = "cat " + resultsFolder + "/output_results.jtl | | awk -F'\\\"' '/^<http/ {print $2\",\"$4\",\"$6\",\"$8\",\"$10\",\"$12\",\"$14\",\"$16\",\"$18\",\"$20}' > " + resultsFolder + "/output_summary.jtl";
+		console.log(execStatement);
 		exec(execStatement, puts);
 }
 
@@ -70,8 +83,9 @@ http.createServer(function (req, res) {
 				res.writeHead(302, "FOUND", {'Location': '/testresults/' + ts + '/reports/testRunResults.html'});
 				res.end();
 		},5000);
-		timeoutId = setInterval(function(){updateResults()},parseInt(ParamsWithValue.refreshRate));
-		reportTimeoutId = setInterval(function(){processResults()},parseInt(ParamsWithValue.reportRate));
+		//timeoutId = setInterval(function(){updateResults()},parseInt(ParamsWithValue.refreshRate));
+		//reportTimeoutId = setInterval(function(){processResults()},parseInt(ParamsWithValue.reportRate));
+		timeoutId = setInterval(function(){awkResults()},parseInt(ParamsWithValue.refreshRate));
 		break;
 	case 'testRunner':
 		res.writeHead(200, "OK", {'Content-Type': 'text/html'});
@@ -111,7 +125,14 @@ http.createServer(function (req, res) {
 		}
 		res.write('</div></div></body></html');
 		res.end();
-		break;	
+		break;
+	case 'finalReport':
+		function puts(error, stdout, stderr) { sys.puts(stdout);}		
+		var execStatement = jmeterPath + "resultsProcessor.sh " + testRunFolder + " output_results.jtl";
+		exec(execStatement, puts);
+		res.writeHead(200, "OK", {'Content-Type': 'text/html'});
+		res.end("ok");
+		break;
     default:
 		var done = finalhandler(req, res);
 		if(req.url == "/"){

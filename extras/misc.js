@@ -4,11 +4,63 @@ var statusUpdateInterval = 0;
 var dataMap = {};
 var httpSamples = {};
 var testResultsMap = {};
+var resultsTickerContent = "";
+var summaryContent = "";
 
 // load the visualization library from Google and set a listener
 google.load("visualization", "1", {packages:["corechart"]});
 google.load('visualization', '1', {packages: ['table']});
 google.setOnLoadCallback(startStatusUpdates);
+
+function getAwkListenerData(){
+    $.get("../results/output_summary.jtl", function(csvString) {
+    // transform the CSV string into a 2-dimensional array
+		var data = $.csv.toArrays(csvString, {onParseValue: $.csv.hooks.castToScalar});
+		httpSamples = {};
+		testResultsMap = {};
+		for(var i=0; i<data.length;++i){
+			var row = data[i];
+			//elapsed time
+			t = row[0];
+			//latency
+			lt = row[1];
+			//timestamp
+			ts = row[2];					
+			//success flag
+			s = row[3];
+			//label
+			lb = row[4]; 
+			//response code
+			rc = row[5];
+			//response message
+			rm = row[6];
+			//thread name
+			tn = row[7];
+			//data type
+			dt = row[8];
+			//bytes
+			by = row[9];
+			try{
+				httpSamples[lb].count ++;
+				testResultsMap[lb][httpSamples[lb].count] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by};
+			}
+			catch(e){
+				httpSamples[lb] = {"count":1,"passed":0,"failed":0,"bytes":0,"latency":0,"response":0};
+				testResultsMap[lb] = [1,{"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by}];
+			}
+			httpSamples[lb].response += parseInt(t);
+			httpSamples[lb].latency += parseInt(lt);
+			httpSamples[lb].bytes += parseInt(by);
+			if(s=="true"){ 
+				httpSamples[lb].passed ++;
+			}
+			else{httpSamples[lb].failed ++;}
+			resultsTickerContent += "<p>" + ts + "  " + lb + "  " + t + "  " + lt + "  " + s + "  " + rc + "</p>";	
+		}
+		document.getElementById("resultsTicker").innerHTML = resultsTickerContent;
+		makeAllLabelGraphs()
+	});
+}
 
 function getListenerData(){
 	$.ajax({
@@ -19,6 +71,9 @@ function getListenerData(){
 			//reset the maps
 			httpSamples = {};
 			testResultsMap = {};
+			
+			//document.getElementById("resultsTicker").innerHTML = "<p></p>";
+			resultsTickerContent = "";
 			//get each label and make a column for it
 			$('testResults', returnedXMLResponse).children().each(function(){
 				//success flag
@@ -56,17 +111,21 @@ function getListenerData(){
 					httpSamples[lb].passed ++;
 				}
 				else{httpSamples[lb].failed ++;}
-				document.getElementById("resultsTicker").innerHTML += "<p>" + ts + "  " + lb + "  " + t + "  " + lt + "  " + s + "  " + rc + "</p>"
+				resultsTickerContent += "<p>" + ts + "  " + lb + "  " + t + "  " + lt + "  " + s + "  " + rc + "</p>";
 			})
+			document.getElementById("resultsTicker").innerHTML = resultsTickerContent;
 			makeAllLabelGraphs()
 		}  
     }); 
 }
 
 function makeAllLabelGraphs(){
+	document.getElementById("summaryStats").innerHTML = "";
+	summaryContent = "";
 	var trkeys = Object.keys(testResultsMap);
 	var labelArray = [];
-	for (var index = 0; index < trkeys.length; ++index) {	
+	
+	for (var index = 0; index < trkeys.length; ++index) {
 		makeLabelGraph(trkeys[index]);
 	}
 }
@@ -108,6 +167,8 @@ function getRunnerStatus(){
 		clearInterval(logUpdateInterval);
 		clearInterval(listenerUpdateInterval);
 		document.getElementById("testSummary").innerHTML = "<p>Test finished</p>";
+		//tell the server to make the pretty graphs
+		$.get("/?action=finalReport");
 	}
 	else{
 		document.getElementById("testSummary").innerHTML = "<p>Test running...</p>";
@@ -123,9 +184,9 @@ function getJmeterLog(){
 }
 
 function startStatusUpdates(){
-	statusUpdateInterval = setInterval(function(){getRunnerStatus()},1000);	
-	logUpdateInterval = setInterval(function(){getJmeterLog()},1000);
-	listenerUpdateInterval = setInterval(function(){getListenerData();},1000);
+	statusUpdateInterval = setInterval(function(){getRunnerStatus()},5000);	
+	logUpdateInterval = setInterval(function(){getJmeterLog()},5000);
+	listenerUpdateInterval = setInterval(function(){getAwkListenerData();},5000);
 }
 
 function makeGraph(){
@@ -147,7 +208,7 @@ function makeGraph(){
         };
           var chart = new google.visualization.LineChart(document.getElementById('csv2chart'));
           chart.draw(data, options);
-		  var table = new google.visualization.Table(document.getElementById('csv2table'));
-		  table.draw(data);
+		  //var table = new google.visualization.Table(document.getElementById('csv2table'));
+		  //table.draw(data);
          });
    }
