@@ -20,18 +20,26 @@ var exec = require('child_process').exec;
 var serve = serveStatic(jmeterPath);
 var ts = "";
 var timeoutId = "";
+var reportTimeoutId = "";
 
 function updateResults(){
 	function puts(error, stdout, stderr) { sys.puts(stdout); }
-	var jmeterRunnerStatus = fs.readFileSync(resultsFolder + "/jmeterRunnerStatus.log", 'utf8')
+	var jmeterRunnerStatus = fs.readFileSync(resultsFolder + "/jmeterRunnerStatus.log", 'utf8');
+		var execStatement = "";
 	if(jmeterRunnerStatus.indexOf("end of run") > 0){
 		clearInterval(timeoutId);
-		var execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl; " + jmeterPath + "resultsProcessor.sh " + testRunFolder + " interim_results.jtl";
+		execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl";
 	}
 	else{
-		var execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl; echo '</testResults>' >> " + resultsFolder + "/interim_results.jtl ; " + jmeterPath + "resultsProcessor.sh " + testRunFolder + " interim_results.jtl";
+		execStatement = "cat " + resultsFolder + "/output_results.jtl > " + resultsFolder + "/interim_results.jtl; echo '</testResults>' >> " + resultsFolder + "/interim_results.jtl";
 	}
 	exec(execStatement, puts);
+}
+
+function processResults(){
+		function puts(error, stdout, stderr) { sys.puts(stdout); }
+		var execStatement = jmeterPath + "resultsProcessor.sh " + testRunFolder + " interim_results.jtl";
+		exec(execStatement, puts);
 }
 
 http.createServer(function (req, res) {
@@ -54,12 +62,17 @@ http.createServer(function (req, res) {
 		execStatement += "cp " + jmeterPath + "/extras/misc.js " + resourcesFolder + "/; ";
 		execStatement += "cp " + jmeterPath + "/extras/testRunResults.html " + reportsFolder + "/; ";
 		execStatement += jmeterBinPath + "jmeter -n -t " + jmeterTestsPath + decodeURI(ParamsWithValue.test) + " " + decodeURI(ParamsWithValue.arguments) + " -l " + resultsFolder + "/output_results.jtl -j " + resultsFolder + "/jmeter.log > " + resultsFolder + "/jmeterRunnerStatus.log";
+		console.log(execStatement);
 		exec(execStatement, puts);
 		
-		res.writeHead(302, "FOUND", {'Location': '/testresults/' + ts + '/reports/testRunResults.html'});
-		res.end();
-		timeoutId = setInterval(function(){updateResults()},parseInt(ParamsWithValue.refreshRate))
-		break;	
+		setTimeout(
+			function(){
+				res.writeHead(302, "FOUND", {'Location': '/testresults/' + ts + '/reports/testRunResults.html'});
+				res.end();
+		},5000);
+		timeoutId = setInterval(function(){updateResults()},parseInt(ParamsWithValue.refreshRate));
+		reportTimeoutId = setInterval(function(){processResults()},parseInt(ParamsWithValue.reportRate));
+		break;
 	case 'testRunner':
 		res.writeHead(200, "OK", {'Content-Type': 'text/html'});
 		res.write('<html><head><meta charset="utf-8"><title>JMeter Test Runner</title>');
@@ -79,13 +92,14 @@ http.createServer(function (req, res) {
 		res.write('<form action="runTest" method="get">');
 		res.write('<input type="hidden" name="action" value="runTest">');
 		res.write('<table><tr><td>Test:</td><td><select name="test">');
-		for(i in testList) {
+		for(var i in testList) {
 			console.log(testList[i]);
 			res.write('<option value="' + testList[i] + '">' + testList[i] + '</option>');
 		}
   		res.write('</select></td></tr>');
 		res.write('<tr><td>arguments:</td><td><input type="text" name="arguments" value="-Jthreads=1 -Jloopcount=10" size=30></td></tr>');
-		res.write('<tr><td>results refresh rate:</td><td><input type="text" name="refreshRate" value="60000"></td></tr>');
+		res.write('<tr><td>results refresh rate:</td><td><input type="text" name="refreshRate" value="10000"></td></tr>');
+		res.write('<tr><td>report refresh rate:</td><td><input type="text" name="reportRate" value="60000"></td></tr>');
 		res.write('<tr><td><input type="submit" value="run"></td><td></td></tr></table></form>');
 		res.write('</div>');
 		res.write('<div id="viewResults">');
@@ -99,14 +113,15 @@ http.createServer(function (req, res) {
 		res.end();
 		break;	
     default:
-		var done = finalhandler(req, res)
+		var done = finalhandler(req, res);
 		if(req.url == "/"){
 			res.writeHead(302, "FOUND", {'Location': '/?action=testRunner'});
 			res.end();
 		}
 		else{
-			serve(req, res, done)
+			serve(req, res, done);
 		}
 		break;
-  };
+  }
+//}).listen(process.env.PORT);
 }).listen(12989);

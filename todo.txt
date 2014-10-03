@@ -1,5 +1,9 @@
 #install jmeter
+#install jmeter-plugins
+wget http://jmeter-plugins.org/downloads/file/JMeterPlugins-Standard-1.2.0.zip
 #install node and npm
-#install httpServer
+#npm install sys
+#npm install finalhandler
+#npm install serve-static
 #install github
 #download sourcefiles from github

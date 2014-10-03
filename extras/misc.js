@@ -4,7 +4,6 @@ var statusUpdateInterval = 0;
 var dataMap = {};
 var httpSamples = {};
 var testResultsMap = {};
-//var labelList = {};
 
 // load the visualization library from Google and set a listener
 google.load("visualization", "1", {packages:["corechart"]});
@@ -19,18 +18,17 @@ function getListenerData(){
         success: function(returnedXMLResponse){
 			//reset the maps
 			httpSamples = {};
-			//testResultsMap = {};
-			//$.parseXML(returnedXMLResponse).find().children().each{
+			testResultsMap = {};
 			//get each label and make a column for it
 			$('testResults', returnedXMLResponse).children().each(function(){
 				//success flag
 				s = $(this).attr("s");
 				//elapsed time
-				t = $(this).attr("t");
+				t = parseInt($(this).attr("t"));
 				//latency
-				lt = $(this).attr("lt");
+				lt = parseInt($(this).attr("lt"));
 				//timestamp
-				ts = $(this).attr("ts");
+				ts = parseInt($(this).attr("ts"));
 				//label
 				lb = $(this).attr("lb"); 
 				//response code
@@ -42,14 +40,14 @@ function getListenerData(){
 				//data type
 				dt = $(this).attr("dt");
 				//bytes
-				by = $(this).attr("by");
+				by = parseInt($(this).attr("by"));
 				try{
 					httpSamples[lb].count ++;
-					//testResultsMap[lb][httpSamples[lb].count] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by};
+					testResultsMap[lb][httpSamples[lb].count] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by};
 				}
 				catch(e){
 					httpSamples[lb] = {"count":1,"passed":0,"failed":0,"bytes":0,"latency":0,"response":0};
-					//testResultsMap[lb][1] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by};
+					testResultsMap[lb] = [1,{"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by}];
 					}
 				httpSamples[lb].response += parseInt(t);
 				httpSamples[lb].latency += parseInt(lt);
@@ -58,18 +56,47 @@ function getListenerData(){
 					httpSamples[lb].passed ++;
 				}
 				else{httpSamples[lb].failed ++;}
+				document.getElementById("resultsTicker").innerHTML += "<p>" + ts + "  " + lb + "  " + t + "  " + lt + "  " + s + "  " + rc + "</p>"
 			})
-			
-			var keys = Object.keys(httpSamples);
-			//put in a pretty table
-			var summaryTable = document.getElementById("summaryTable");
-			var tableContents = "<tr><th>Transaction</th><th>Count</th><th>Passed</th><th>Bytes</th><th>Latency</th><th>Response</th></tr>";
-			for (index = 0; index < keys.length; ++index) {
-				tableContents += "<tr><td>" + keys[index] + "</td><td>" + httpSamples[keys[index]].count + "</td><td>" + httpSamples[keys[index]].passed + "</td><td>" + httpSamples[keys[index]].bytes + "</td><td>" + Math.round(httpSamples[keys[index]].latency / httpSamples[keys[index]].count) + "</td><td>" + Math.round(httpSamples[keys[index]].response / httpSamples[keys[index]].count) + "</td></tr>";
-			}
-			summaryTable.innerHTML = tableContents;		
+			makeAllLabelGraphs()
 		}  
     }); 
+}
+
+function makeAllLabelGraphs(){
+	var trkeys = Object.keys(testResultsMap);
+	var labelArray = [];
+	for (var index = 0; index < trkeys.length; ++index) {	
+		makeLabelGraph(trkeys[index]);
+	}
+}
+
+function makeLabelGraph(label){
+
+	var labelResultsArray = testResultsMap[label];
+	var data = new google.visualization.DataTable;
+	data.addColumn('datetime', 'Time');
+    data.addColumn('number', "Passed");
+    data.addColumn('number', "Failed");
+    data.addColumn('number', "Latency");
+	for(var tmpindex = 1; tmpindex < labelResultsArray.length; ++tmpindex){
+		var labelResultsItem = labelResultsArray[tmpindex];
+		if(labelResultsItem.s == "true"){
+		data.addRow([new Date(labelResultsItem.ts), labelResultsItem.t, 0, labelResultsItem.lt]);	
+		}
+		else{data.addRow([new Date(labelResultsItem.ts), 0, labelResultsItem.t,labelResultsItem.lt]);}
+		
+	}	
+	var charty = document.createElement("div")
+	var chart = new google.visualization.ColumnChart(charty);
+	var title = label + " (count:" + httpSamples[label].count + " passed:" + httpSamples[label].passed + " avg response:" + Math.round(httpSamples[label].response/httpSamples[label].count) + "ms)"
+	var options = {'title':title, 'width':900, 'height':300};
+    chart.draw(data, options);
+    document.getElementById("summaryStats").appendChild(charty);
+    //var tabley = document.createElement("div");
+	//var table = new google.visualization.Table(tabley);
+	//table.draw(data);
+	//document.getElementById("testSummary").appendChild(tabley);
 }
 	
 function getRunnerStatus(){
@@ -102,7 +129,7 @@ function startStatusUpdates(){
 }
 
 function makeGraph(){
-	csvFile = document.getElementById("graphOption").value;
+	var csvFile = document.getElementById("graphOption").value;
     // grab the CSV
     $.get(csvFile, function(csvString) {
     // transform the CSV string into a 2-dimensional array
