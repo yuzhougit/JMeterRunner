@@ -36,7 +36,7 @@ var reportTimeoutId = "";
 	//}
 //	exec(execStatement, puts);
 //}
-
+/*
 function processResults(){
 	function puts(error, stdout, stderr) { sys.puts(stdout); }
 	var jmeterRunnerStatus = fs.readFileSync(resultsFolder + "/jmeterRunnerStatus.log", 'utf8');
@@ -47,6 +47,7 @@ function processResults(){
 		var execStatement = jmeterPath + "resultsProcessor.sh " + testRunFolder + " output_results.jtl";
 	}
 }
+*/
 
 function awkResults(){
 		function puts(error, stdout, stderr) { sys.puts(stdout); }
@@ -113,7 +114,7 @@ http.createServer(function (req, res) {
   		res.write('</select></td></tr>');
 		res.write('<tr><td>arguments:</td><td><input type="text" name="arguments" value="-Jthreads=1 -Jloopcount=10" size=30></td></tr>');
 		res.write('<tr><td>results refresh rate:</td><td><input type="text" name="refreshRate" value="10000"></td></tr>');
-		res.write('<tr><td>report refresh rate:</td><td><input type="text" name="reportRate" value="60000"></td></tr>');
+		//res.write('<tr><td>report refresh rate:</td><td><input type="text" name="reportRate" value="60000"></td></tr>');
 		res.write('<tr><td><input type="submit" value="run"></td><td></td></tr></table></form>');
 		res.write('</div>');
 		res.write('<div id="viewResults">');

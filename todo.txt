@@ -1,9 +1,14 @@
-#install jmeter
-#install jmeter-plugins
+#node extras
+npm install sys
+npm install finalhandler
+npm install serve-static
+
+#jmeter stuff
+sudo apt-get jmeter
 wget http://jmeter-plugins.org/downloads/file/JMeterPlugins-Standard-1.2.0.zip
-#install node and npm
-#npm install sys
-#npm install finalhandler
-#npm install serve-static
-#install github
-#download sourcefiles from github
+unzip -n JMeterPlugins-Standard-1.2.0.zip -d /usr/share/jmeter
+wget -n http://jmeter-plugins.org/downloads/file/JMeterPlugins-Extras-1.2.0.zip
+unzip JMeterPlugins-Extras-1.2.0.zip -d /usr/share/jmeter
+
+#repository
+git clone https://github.com/hosborne1/JMeterRunner.git
