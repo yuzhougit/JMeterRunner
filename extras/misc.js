@@ -6,6 +6,8 @@ var httpSamples = {};
 var testResultsMap = {};
 var resultsTickerContent = "";
 var summaryContent = "";
+var logUpdateInterval = 0;
+var listenerUpdateInterval = 0;
 
 // load the visualization library from Google and set a listener
 google.load("visualization", "1", {packages:["corechart"]});
@@ -13,6 +15,7 @@ google.load('visualization', '1', {packages: ['table']});
 google.setOnLoadCallback(startStatusUpdates);
 
 function getAwkListenerData(){
+	$.get("/?action=getUpdate");
     $.get("../results/output_summary.jtl", function(csvString) {
     // transform the CSV string into a 2-dimensional array
 		var data = $.csv.toArrays(csvString, {onParseValue: $.csv.hooks.castToScalar});
@@ -40,13 +43,17 @@ function getAwkListenerData(){
 			dt = row[8];
 			//bytes
 			by = row[9];
+			//ng
+			ng = row[10];
+			//na
+			na = row[11];
 			try{
 				httpSamples[lb].count ++;
-				testResultsMap[lb][httpSamples[lb].count] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by};
+				testResultsMap[lb][httpSamples[lb].count] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by,"ng":ng,"na":na};
 			}
 			catch(e){
 				httpSamples[lb] = {"count":1,"passed":0,"failed":0,"bytes":0,"latency":0,"response":0};
-				testResultsMap[lb] = [1,{"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by}];
+				testResultsMap[lb] = [1,{"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by,"ng":ng,"na":na}];
 			}
 			httpSamples[lb].response += parseInt(t);
 			httpSamples[lb].latency += parseInt(lt);
@@ -60,63 +67,6 @@ function getAwkListenerData(){
 		document.getElementById("resultsTicker").innerHTML = resultsTickerContent;
 		makeAllLabelGraphs()
 	});
-}
-
-function getListenerData(){
-	$.ajax({
-        url: '../results/interim_results.jtl',
-        type: 'GET', 
-        dataType: 'xml',
-        success: function(returnedXMLResponse){
-			//reset the maps
-			httpSamples = {};
-			testResultsMap = {};
-			
-			//document.getElementById("resultsTicker").innerHTML = "<p></p>";
-			resultsTickerContent = "";
-			//get each label and make a column for it
-			$('testResults', returnedXMLResponse).children().each(function(){
-				//success flag
-				s = $(this).attr("s");
-				//elapsed time
-				t = parseInt($(this).attr("t"));
-				//latency
-				lt = parseInt($(this).attr("lt"));
-				//timestamp
-				ts = parseInt($(this).attr("ts"));
-				//label
-				lb = $(this).attr("lb"); 
-				//response code
-				rc = $(this).attr("rc");
-				//response message
-				rm = $(this).attr("rm");
-				//thread name
-				tn = $(this).attr("tn");
-				//data type
-				dt = $(this).attr("dt");
-				//bytes
-				by = parseInt($(this).attr("by"));
-				try{
-					httpSamples[lb].count ++;
-					testResultsMap[lb][httpSamples[lb].count] = {"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by};
-				}
-				catch(e){
-					httpSamples[lb] = {"count":1,"passed":0,"failed":0,"bytes":0,"latency":0,"response":0};
-					testResultsMap[lb] = [1,{"ts":ts,"lt":lt,"s":s,"t":t,"rc":rc,"by":by}];
-					}
-				httpSamples[lb].response += parseInt(t);
-				httpSamples[lb].latency += parseInt(lt);
-				httpSamples[lb].bytes += parseInt(by);
-				if(s=="true"){ 
-					httpSamples[lb].passed ++;
-				}
-				else{httpSamples[lb].failed ++;}
-				resultsTickerContent += "<p>" + ts + "  " + lb + "  " + t + "  " + lt + "  " + s + "  " + rc + "</p>";
-			})
-			document.getElementById("resultsTicker").innerHTML = resultsTickerContent;
-			makeAllLabelGraphs()
-		}  
-    }); 
 }
 
 function makeAllLabelGraphs(){
@@ -137,19 +87,20 @@ function makeLabelGraph(label){
 	data.addColumn('datetime', 'Time');
     data.addColumn('number', "Passed");
     data.addColumn('number', "Failed");
+    data.addColumn('number', "Users");
     data.addColumn('number', "Latency");
 	for(var tmpindex = 1; tmpindex < labelResultsArray.length; ++tmpindex){
 		var labelResultsItem = labelResultsArray[tmpindex];
 		if(labelResultsItem.s == "true"){
-		data.addRow([new Date(labelResultsItem.ts), labelResultsItem.t, 0, labelResultsItem.lt]);	
+		data.addRow([new Date(labelResultsItem.ts), labelResultsItem.t, 0, labelResultsItem.na, labelResultsItem.lt]);	
 		}
-		else{data.addRow([new Date(labelResultsItem.ts), 0, labelResultsItem.t,labelResultsItem.lt]);}
+		else{data.addRow([new Date(labelResultsItem.ts), 0, labelResultsItem.t,labelResultsItem.na, labelResultsItem.lt]);}
 		
 	}	
 	var charty = document.createElement("div")
-	var chart = new google.visualization.ColumnChart(charty);
+	var chart = new google.visualization.ComboChart(charty);
 	var title = label + " (count:" + httpSamples[label].count + " passed:" + httpSamples[label].passed + " avg response:" + Math.round(httpSamples[label].response/httpSamples[label].count) + "ms)"
-	var options = {'title':title, 'width':900, 'height':300};
+	var options = {'title':title, 'width':900, 'height':300, seriesType: 'line', series: {1: {type: "column"}}};
     chart.draw(data, options);
     document.getElementById("summaryStats").appendChild(charty);
     //var tabley = document.createElement("div");

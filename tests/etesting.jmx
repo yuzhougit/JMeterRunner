@@ -229,15 +229,6 @@
           <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
         </HTTPSamplerProxy>
         <hashTree/>
-        <kg.apc.jmeter.reporters.FlexibleFileWriter guiclass="kg.apc.jmeter.reporters.FlexibleFileWriterGui" testclass="kg.apc.jmeter.reporters.FlexibleFileWriter" testname="csv_output" enabled="true">
-          <stringProp name="filename">csv_output.csv</stringProp>
-          <stringProp name="columns">endTime|,|sampleLabel|,|threadName|,|responseTime|,|latency|,|sentBytes|,|receivedBytes|,|isSuccessful|,|responseCode|\r\n</stringProp>
-          <boolProp name="overwrite">true</boolProp>
-          <stringProp name="header">endTime,sampleLabel,threadName,responseTime,latency,sentBytes,receivedBytes,isSuccessful,responseCode
-</stringProp>
-          <stringProp name="footer"></stringProp>
-        </kg.apc.jmeter.reporters.FlexibleFileWriter>
-        <hashTree/>
       </hashTree>
       <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Main Pages" enabled="false">
         <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
