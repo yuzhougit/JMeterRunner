@@ -6,15 +6,16 @@ reportsFolder=$testRunFolder/reports
 resourcesFolder=$testRunFolder/resources
 
 homepath="/home/ec2-user/jmeter"
-jmeterdir="/home/ec2-user/apache-jmeter-2.11"
-cp  $homepath/extras/jmeter-tree_view.xsl $resourcesFolder/
-cp  $homepath/extras/jmeter-results-report_21.xsl $resourcesFolder/
-cp  $homepath/extras/jmeter-results-detail-report_21.xsl $resourcesFolder/
-cp  $homepath/extras/expand.png $resourcesFolder/
-cp  $homepath/extras/collapse.png $resourcesFolder/
-cp  $homepath/extras/collapse.png $resourcesFolder/
-cp  $homepath/extras/chartExample.html $resourcesFolder/
-cp  $homepath/extras/LatenciesOverTime.html $resourcesFolder/
+#jmeterdir="/home/ec2-user/apache-jmeter-2.11"
+jmeterdir="/usr/share/jmeter"
+
+#cp  $homepath/extras/jmeter-tree_view.xsl $resourcesFolder/
+#cp  $homepath/extras/jmeter-results-report_21.xsl $resourcesFolder/
+#cp  $homepath/extras/jmeter-results-detail-report_21.xsl $resourcesFolder/
+#cp  $homepath/extras/expand.png $resourcesFolder/
+#cp  $homepath/extras/collapse.png $resourcesFolder/
+#cp  $homepath/extras/collapse.png $resourcesFolder/
+#cp  $homepath/extras/chartExample.html $resourcesFolder/
 
 RESULTSHEAD=`head -n 1 $resultsFolder/$listener`
 RESULTSTAIL=`tail -n +2 $resultsFolder/$listener`
